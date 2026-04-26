@@ -41,3 +41,10 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Custom ignores
+.idea/
+database.sqlite
+backend/database.sqlite
+backend/node_modules/
+users.db
