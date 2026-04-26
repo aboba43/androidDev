@@ -11,7 +11,7 @@ export default function EditProfileScreen() {
   const dispatch = useDispatch();
 
   const [name, setName] = useState(user.name || '');
-  const [avatarUri, setAvatarUri] = useState(user.avatarUri || null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(user.avatarUri || null);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
