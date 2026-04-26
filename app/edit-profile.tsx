@@ -7,7 +7,7 @@ import { router } from 'expo-router';
 import { updateUser } from '../utils/database';
 
 export default function EditProfileScreen() {
-  const user = useSelector((state) => state.user);
+  const user = useSelector((state: any) => state.user);
   const dispatch = useDispatch();
 
   const [name, setName] = useState(user.name || '');
