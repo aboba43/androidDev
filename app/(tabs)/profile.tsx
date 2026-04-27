@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert, SafeAreaView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateUserProfile } from '../store/userSlice';
+import { updateUserProfile, logoutUser } from '../../store/userSlice';
 import { router } from 'expo-router';
-import { updateUser } from '../utils/database';
+import { updateUser } from '../../utils/database';
 
 export default function EditProfileScreen() {
   const user = useSelector((state: any) => state.user);
@@ -43,10 +43,15 @@ export default function EditProfileScreen() {
       }));
 
       Alert.alert('Успіх', 'Дані профілю оновлено');
-      router.back();
+      router.navigate('/shop');
     } else {
       Alert.alert('Помилка', 'Не вдалося оновити дані на сервері');
     }
+  };
+
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    router.replace('/');
   };
 
   return (
@@ -89,8 +94,12 @@ export default function EditProfileScreen() {
           <Text style={styles.buttonText}>Зберегти зміни</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.cancelButton} onPress={() => router.navigate('/shop')}>
           <Text style={styles.cancelButtonText}>Скасувати</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Вийти з акаунту</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -182,8 +191,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#dc3545',
+    color: '#888',
     fontSize: 16,
     fontWeight: '500',
+  },
+  logoutButton: {
+    marginTop: 40,
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#dc3545',
+    borderRadius: 8,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

@@ -2,7 +2,6 @@ import React from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, SafeAreaView, Image } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { addToCart, removeFromCart } from '../../store/cartSlice';
-import { logoutUser } from '../../store/userSlice';
 import { router } from 'expo-router';
 
 // --- Компонент UI Магазину ---
@@ -15,39 +14,11 @@ function CryptoShop() {
   // useDispatch використовується для виклику дій (actions)
   const dispatch = useDispatch();
 
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    router.replace('/');
-  };
-
   // Рахуємо загальну суму кошика
   const totalCartPrice = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
   return (
     <SafeAreaView style={styles.container}>
-
-      {/* Профіль Користувача */}
-      {user.isRegistered && (
-        <View style={styles.profileSectionWrapper}>
-          <TouchableOpacity 
-            style={styles.profileSection} 
-            onPress={() => router.push('/edit-profile')}
-          >
-            {user.avatarUri ? (
-              <Image source={{ uri: user.avatarUri }} style={styles.profileAvatar} />
-            ) : (
-              <View style={styles.profileAvatarPlaceholder} />
-            )}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.profileName}>{user.name}</Text>
-              <Text style={styles.profileEmail}>{user.email}</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutButtonText}>Вийти</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {/* Список товарів (Криптовалют) */}
       <View style={styles.section}>
