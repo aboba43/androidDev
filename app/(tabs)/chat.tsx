@@ -1,13 +1,147 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
+import React, { useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from 'react-native';
+
+
+const N8N_WEBHOOK_URL = '';
 
 export default function ChatScreen() {
+  const [messages, setMessages] = useState([
+    { id: '1', text: 'Привіт! Я ваш ШІ-тренер. Я можу допомогти вам з планом тренувань, харчуванням або відповісти на будь-які питання.', sender: 'bot' }
+  ]);
+  const [inputText, setInputText] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const flatListRef = useRef(null);
+
+  const sendMessage = async () => {
+    if (!inputText.trim()) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      text: inputText.trim(),
+      sender: 'user',
+    };
+
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputText('');
+    setIsTyping(true);
+
+    try {
+      if (N8N_WEBHOOK_URL) {
+
+        const response = await fetch(N8N_WEBHOOK_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: userMessage.text }),
+        });
+
+        const data = await response.json();
+
+
+        const botMessage = {
+          id: (Date.now() + 1).toString(),
+          text: data.reply || "Отримано порожню відповідь від ШІ.",
+          sender: 'bot',
+        };
+        setMessages((prev) => [...prev, botMessage]);
+
+      } else {
+
+        setTimeout(() => {
+          const mockBotMessage = {
+            id: (Date.now() + 1).toString(),
+            text: `Це тестова відповідь від ШІ на ваше повідомлення: "${userMessage.text}". Вставте N8N_WEBHOOK_URL у коді, щоб підключити справжнього бота.`,
+            sender: 'bot',
+          };
+          setMessages((prev) => [...prev, mockBotMessage]);
+          setIsTyping(false);
+        }, 1500);
+        return;
+      }
+    } catch (error) {
+      console.error('Error fetching from n8n:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        text: "Вибачте, сталася помилка з'єднання з ШІ сервером.",
+        sender: 'bot',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
+
+    setIsTyping(false);
+  };
+
+  const renderMessage = ({ item }) => {
+    const isUser = item.sender === 'user';
+    return (
+      <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.botBubble]}>
+        <Text style={[styles.messageText, isUser ? styles.userText : styles.botText]}>
+          {item.text}
+        </Text>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Чат з ШІ</Text>
-        <Text style={styles.subtitle}>Ця функція з'явиться найближчим часом. Тут ви зможете спілкуватися з персональним тренером зі штучним інтелектом.</Text>
-      </View>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>ШІ Тренер</Text>
+        </View>
+
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.messageList}
+          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+          onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        />
+
+        {isTyping && (
+          <View style={styles.typingIndicator}>
+            <ActivityIndicator size="small" color="#007bff" />
+            <Text style={styles.typingText}>ШІ друкує...</Text>
+          </View>
+        )}
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Напишіть повідомлення..."
+            placeholderTextColor="#888"
+            value={inputText}
+            onChangeText={setInputText}
+            multiline
+          />
+          <TouchableOpacity
+            style={[styles.sendButton, !inputText.trim() && styles.sendButtonDisabled]}
+            onPress={sendMessage}
+            disabled={!inputText.trim()}
+          >
+            <FontAwesome name="send" size={20} color={inputText.trim() ? "#fff" : "#ccc"} />
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -15,24 +149,99 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
   },
-  content: {
+  keyboardAvoid: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  title: {
-    fontSize: 24,
+  header: {
+    padding: 15,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
     color: '#333',
   },
-  subtitle: {
+  messageList: {
+    padding: 15,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+  messageBubble: {
+    maxWidth: '80%',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 10,
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#007bff',
+    borderBottomRightRadius: 4,
+  },
+  botBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#e9ecef',
+    borderBottomLeftRadius: 4,
+  },
+  messageText: {
     fontSize: 16,
-    textAlign: 'center',
+    lineHeight: 22,
+  },
+  userText: {
+    color: '#fff',
+  },
+  botText: {
+    color: '#333',
+  },
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  typingText: {
+    marginLeft: 8,
     color: '#666',
-    lineHeight: 24,
+    fontStyle: 'italic',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ddd',
+    alignItems: 'flex-end',
+  },
+  textInput: {
+    flex: 1,
+    backgroundColor: '#f9f9f9',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingTop: 10,
+    paddingBottom: 10,
+    fontSize: 16,
+    maxHeight: 100,
+    color: '#333',
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#007bff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
+    marginBottom: 2,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
 });
