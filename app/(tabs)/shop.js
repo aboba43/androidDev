@@ -1,24 +1,28 @@
-import React, { useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  ScrollView,
+import { router } from 'expo-router';
+import { useState } from 'react';
+import {
+  Image,
   Keyboard,
-  TouchableWithoutFeedback
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
+import { useSelector } from 'react-redux';
 
 export default function CalculatorScreen() {
+  const records = useSelector((state: any) => state.user.records) || { bench: 0, squat: 0, deadlift: 0 };
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [oneRepMax, setOneRepMax] = useState(null);
 
   const calculate1RM = () => {
     Keyboard.dismiss();
-    
+
     const m = parseFloat(weight);
     const k = parseInt(reps, 10);
 
@@ -55,10 +59,33 @@ export default function CalculatorScreen() {
     <SafeAreaView style={styles.container}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          
+
           <View style={styles.header}>
             <Text style={styles.headerTitle}>1RM Калькулятор</Text>
             <Text style={styles.headerSubtitle}>Розрахунок разового максимуму</Text>
+          </View>
+
+          <View style={styles.recordsContainer}>
+            <Text style={styles.recordsTitle}>Мої Рекорди</Text>
+            <View style={styles.recordsRow}>
+              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/bench')}>
+                <Image source={require('../../app/exercise/benchpress.png')} style={styles.recordIcon} />
+                <Text style={styles.recordLabel}>Жим лежачи</Text>
+                <Text style={styles.recordValue}>{records.bench} кг</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/squat')}>
+                <Image source={require('../../app/exercise/squat.png')} style={styles.recordIcon} />
+                <Text style={styles.recordLabel}>Присяд зі штангою</Text>
+                <Text style={styles.recordValue}>{records.squat} кг</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/deadlift')}>
+                <Image source={require('../../app/exercise/deadlift.png')} style={styles.recordIcon} />
+                <Text style={styles.recordLabel}>Станова тяга</Text>
+                <Text style={styles.recordValue}>{records.deadlift} кг</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.card}>
@@ -86,8 +113,8 @@ export default function CalculatorScreen() {
               />
             </View>
 
-            <TouchableOpacity 
-              style={[styles.button, (!weight || !reps) && styles.buttonDisabled]} 
+            <TouchableOpacity
+              style={[styles.button, (!weight || !reps) && styles.buttonDisabled]}
               onPress={calculate1RM}
               disabled={!weight || !reps}
             >
@@ -105,7 +132,7 @@ export default function CalculatorScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>Увага!</Text>
             <Text style={styles.infoText}>
-              Точне значення одноповторного максимуму залежить від багатьох індивідуальних особливостей організму кожної конкретної людини. 
+              Точне значення одноповторного максимуму залежить від багатьох індивідуальних особливостей організму кожної конкретної людини.
               Слід враховувати, що похибка даних формул може становити до <Text style={styles.boldText}>4%</Text>.
             </Text>
             <Text style={styles.infoTextSub}>
@@ -142,6 +169,50 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     fontSize: 16,
     color: '#666',
+  },
+  recordsContainer: {
+    marginBottom: 20,
+  },
+  recordsTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  recordsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  recordCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 15,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  recordIcon: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+    marginBottom: 5,
+  },
+  recordLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  recordValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
   },
   card: {
     backgroundColor: '#fff',

@@ -5,6 +5,11 @@ const initialState = {
   email: '',
   avatarUri: null,
   isRegistered: false,
+  records: {
+    bench: 0,
+    squat: 0,
+    deadlift: 0,
+  },
 };
 
 export const userSlice = createSlice({
@@ -22,14 +27,21 @@ export const userSlice = createSlice({
       state.email = '';
       state.avatarUri = null;
       state.isRegistered = false;
+      state.records = { bench: 0, squat: 0, deadlift: 0 };
     },
     updateUserProfile: (state, action) => {
       state.name = action.payload.name;
       state.avatarUri = action.payload.avatarUri;
     },
+    updateRecord: (state, action) => {
+      const { exercise, value } = action.payload;
+      if (state.records && exercise in state.records) {
+        state.records[exercise] = value;
+      }
+    },
   },
 });
 
-export const { registerUser, logoutUser, updateUserProfile } = userSlice.actions;
+export const { registerUser, logoutUser, updateUserProfile, updateRecord } = userSlice.actions;
 
 export default userSlice.reducer;

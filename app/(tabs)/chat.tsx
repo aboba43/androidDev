@@ -1,4 +1,5 @@
 import { FontAwesome } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,17 +13,31 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { useSelector } from 'react-redux';
 
 
-const N8N_WEBHOOK_URL = '';
+let N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/ask-ai';
+
+const debuggerHost = Constants.expoConfig?.hostUri;
+if (N8N_WEBHOOK_URL.includes('localhost')) {
+  if (debuggerHost) {
+    const ip = debuggerHost.split(':')[0];
+    N8N_WEBHOOK_URL = N8N_WEBHOOK_URL.replace('localhost', ip);
+  } else if (Platform.OS === 'android') {
+    N8N_WEBHOOK_URL = N8N_WEBHOOK_URL.replace('localhost', '10.0.2.2');
+  }
+}
 
 export default function ChatScreen() {
+  const user = useSelector((state: any) => state.user);
+  const userId = user?.email || 'guest_user';
+
   const [messages, setMessages] = useState([
     { id: '1', text: 'Привіт! Я ваш ШІ-тренер. Я можу допомогти вам з планом тренувань, харчуванням або відповісти на будь-які питання.', sender: 'bot' }
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const flatListRef = useRef(null);
+  const flatListRef = useRef<FlatList>(null);
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -46,15 +61,31 @@ export default function ChatScreen() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message: userMessage.text }),
+          body: JSON.stringify({
+            message: userMessage.text,
+            userId: userId
+          }),
         });
 
-        const data = await response.json();
+        let replyText = "Отримано порожню відповідь від ШІ.";
 
+        try {
+          const responseText = await response.text();
+          try {
+            const data = JSON.parse(responseText);
+            // Підтримка різних полів, які може повертати n8n
+            replyText = data.reply || data.output || data.text || data.message || responseText;
+          } catch (e) {
+            // Якщо це не JSON, просто використовуємо текст
+            replyText = responseText;
+          }
+        } catch (e) {
+          console.error("Error reading response:", e);
+        }
 
         const botMessage = {
           id: (Date.now() + 1).toString(),
-          text: data.reply || "Отримано порожню відповідь від ШІ.",
+          text: replyText,
           sender: 'bot',
         };
         setMessages((prev) => [...prev, botMessage]);
@@ -72,11 +103,11 @@ export default function ChatScreen() {
         }, 1500);
         return;
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching from n8n:', error);
       const errorMessage = {
         id: (Date.now() + 1).toString(),
-        text: "Вибачте, сталася помилка з'єднання з ШІ сервером.",
+        text: `Помилка: ${error.message || "сталася помилка з'єднання з ШІ сервером."}`,
         sender: 'bot',
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -85,7 +116,7 @@ export default function ChatScreen() {
     setIsTyping(false);
   };
 
-  const renderMessage = ({ item }) => {
+  const renderMessage = ({ item }: { item: any }) => {
     const isUser = item.sender === 'user';
     return (
       <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.botBubble]}>
