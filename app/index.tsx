@@ -25,6 +25,11 @@ export default function LoginScreen() {
         name: user.name,
         email: user.email,
         avatarUri: user.avatarUri,
+        records: {
+          bench: user.bench || 0,
+          squat: user.squat || 0,
+          deadlift: user.deadlift || 0
+        }
       }));
 
       // Перехід до головного меню (табів)

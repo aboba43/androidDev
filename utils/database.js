@@ -89,3 +89,26 @@ export const updateUser = async (email, name, avatarUri) => {
     return null;
   }
 };
+
+export const saveRecords = async (email, bench, squat, deadlift) => {
+  try {
+    const response = await fetch(`${API_URL}/records`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, bench, squat, deadlift }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Update records failed');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error saving records on server:', error);
+    return null;
+  }
+};

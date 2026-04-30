@@ -43,17 +43,24 @@ export default function RegisterScreen() {
     }
 
     // Зберігаємо в базу даних SQLite (тепер з паролем)
-    await saveUser(name, email, password, avatarUri);
+    const user = await saveUser(name, email, password, avatarUri);
 
-    // Зберігаємо в Redux
-    dispatch(registerUser({
-      name,
-      email,
-      avatarUri,
-    }));
+    if (user) {
+      // Зберігаємо в Redux
+      dispatch(registerUser({
+        name: user.name,
+        email: user.email,
+        avatarUri: user.avatarUri,
+        records: {
+          bench: user.bench || 0,
+          squat: user.squat || 0,
+          deadlift: user.deadlift || 0
+        }
+      }));
 
-    // Перехід до головного меню (табів)
-    router.replace('/shop');
+      // Перехід до головного меню (табів)
+      router.replace('/shop');
+    }
   };
 
   if (loading) {

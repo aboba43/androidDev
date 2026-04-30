@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateRecord } from '../../store/userSlice';
+import { saveRecords } from '../../utils/database';
 
 const exerciseData = {
   bench: {
@@ -42,7 +43,6 @@ export default function ExerciseScreen() {
   const { id } = useLocalSearchParams();
   const dispatch = useDispatch();
 
-  // Перевіряємо чи валідний ID
   const data = exerciseData[id as keyof typeof exerciseData];
   const records = useSelector((state: any) => state.user.records);
   const currentRecord = records ? records[id as string] : 0;
@@ -58,10 +58,24 @@ export default function ExerciseScreen() {
     );
   }
 
-  const handleSave = () => {
+  const user = useSelector((state: any) => state.user);
+
+  const handleSave = async () => {
     const val = parseFloat(newValue);
     if (!isNaN(val) && val >= 0) {
       dispatch(updateRecord({ exercise: id, value: val }));
+      
+      // Save to backend database
+      if (user.email) {
+        const updatedRecords = { ...records, [id]: val };
+        await saveRecords(
+          user.email,
+          updatedRecords.bench || 0,
+          updatedRecords.squat || 0,
+          updatedRecords.deadlift || 0
+        );
+      }
+      
       router.back();
     }
   };

@@ -21,6 +21,9 @@ export const userSlice = createSlice({
       state.email = action.payload.email;
       state.avatarUri = action.payload.avatarUri;
       state.isRegistered = true;
+      if (action.payload.records) {
+        state.records = action.payload.records;
+      }
     },
     logoutUser: (state) => {
       state.name = '';

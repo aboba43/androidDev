@@ -25,9 +25,18 @@ async function initDB() {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
-      avatarUri TEXT
+      avatarUri TEXT,
+      bench REAL DEFAULT 0,
+      squat REAL DEFAULT 0,
+      deadlift REAL DEFAULT 0
     );
   `);
+  
+  // Try adding columns if table already existed without them
+  try { await db.exec('ALTER TABLE users ADD COLUMN bench REAL DEFAULT 0'); } catch(e) {}
+  try { await db.exec('ALTER TABLE users ADD COLUMN squat REAL DEFAULT 0'); } catch(e) {}
+  try { await db.exec('ALTER TABLE users ADD COLUMN deadlift REAL DEFAULT 0'); } catch(e) {}
+
   console.log('Backend database initialized.');
 }
 
@@ -46,7 +55,7 @@ app.post('/register', async (req, res) => {
       'INSERT INTO users (name, email, password, avatarUri) VALUES (?, ?, ?, ?)',
       [name, email, hashedPassword, avatarUri]
     );
-    res.status(201).json({ id: result.lastID, name, email, avatarUri });
+    res.status(201).json({ id: result.lastID, name, email, avatarUri, bench: 0, squat: 0, deadlift: 0 });
   } catch (error) {
     if (error.code === 'SQLITE_CONSTRAINT') {
       res.status(400).json({ error: 'Email already exists' });
@@ -114,8 +123,28 @@ app.put('/user', async (req, res) => {
   }
 });
 
-initDB().then(() => {
-  app.listen(port, () => {
+// Endpoint: Update User Records
+app.put('/records', async (req, res) => {
+  const { email, bench, squat, deadlift } = req.body;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    await db.run(
+      'UPDATE users SET bench = ?, squat = ?, deadlift = ? WHERE email = ?',
+      [bench || 0, squat || 0, deadlift || 0, email]
+    );
+    res.status(200).json({ message: 'Records updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+initDB();
+
+app.listen(port, () => {
     console.log(`Server listening at http://localhost:${port}`);
-  });
 });
