@@ -28,7 +28,8 @@ async function initDB() {
       avatarUri TEXT,
       bench REAL DEFAULT 0,
       squat REAL DEFAULT 0,
-      deadlift REAL DEFAULT 0
+      deadlift REAL DEFAULT 0,
+      bodyWeight REAL DEFAULT 0
     );
   `);
   
@@ -36,6 +37,7 @@ async function initDB() {
   try { await db.exec('ALTER TABLE users ADD COLUMN bench REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN squat REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN deadlift REAL DEFAULT 0'); } catch(e) {}
+  try { await db.exec('ALTER TABLE users ADD COLUMN bodyWeight REAL DEFAULT 0'); } catch(e) {}
 
   console.log('Backend database initialized.');
 }
@@ -55,7 +57,7 @@ app.post('/register', async (req, res) => {
       'INSERT INTO users (name, email, password, avatarUri) VALUES (?, ?, ?, ?)',
       [name, email, hashedPassword, avatarUri]
     );
-    res.status(201).json({ id: result.lastID, name, email, avatarUri, bench: 0, squat: 0, deadlift: 0 });
+    res.status(201).json({ id: result.lastID, name, email, avatarUri, bench: 0, squat: 0, deadlift: 0, bodyWeight: 0 });
   } catch (error) {
     if (error.code === 'SQLITE_CONSTRAINT') {
       res.status(400).json({ error: 'Email already exists' });
@@ -125,7 +127,7 @@ app.put('/user', async (req, res) => {
 
 // Endpoint: Update User Records
 app.put('/records', async (req, res) => {
-  const { email, bench, squat, deadlift } = req.body;
+  const { email, bench, squat, deadlift, bodyWeight } = req.body;
   
   if (!email) {
     return res.status(400).json({ error: 'Email is required' });
@@ -133,8 +135,8 @@ app.put('/records', async (req, res) => {
 
   try {
     await db.run(
-      'UPDATE users SET bench = ?, squat = ?, deadlift = ? WHERE email = ?',
-      [bench || 0, squat || 0, deadlift || 0, email]
+      'UPDATE users SET bench = ?, squat = ?, deadlift = ?, bodyWeight = ? WHERE email = ?',
+      [bench || 0, squat || 0, deadlift || 0, bodyWeight || 0, email]
     );
     res.status(200).json({ message: 'Records updated successfully' });
   } catch (error) {

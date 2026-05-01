@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Image,
   Keyboard,
@@ -12,13 +12,43 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateRecord } from '../../store/userSlice';
+import { saveRecords } from '../../utils/database';
+import {
+  calculateDOTS,
+  calculateIPF,
+  calculateIPFGL,
+  calculateNewWilks,
+  calculateOldWilks,
+} from '../../utils/calculator';
 
 export default function CalculatorScreen() {
-  const records = useSelector((state: any) => state.user.records) || { bench: 0, squat: 0, deadlift: 0 };
+  const records = useSelector((state) => state.user.records) || { bench: 0, squat: 0, deadlift: 0, bodyWeight: 0 };
+  const userEmail = useSelector((state) => state.user.email);
+  const dispatch = useDispatch();
+  
+  const [activeTab, setActiveTab] = useState('1rm'); // '1rm' or 'scores'
+
+  // 1RM States
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [oneRepMax, setOneRepMax] = useState(null);
+
+  // Scores States
+  const [bw, setBw] = useState('');
+  
+  useEffect(() => {
+    if (records.bodyWeight && !bw) {
+      setBw(records.bodyWeight.toString());
+    }
+  }, [records.bodyWeight]);
+  const [liftedWeight, setLiftedWeight] = useState('');
+  const [isFemale, setIsFemale] = useState(false);
+  const [isKg, setIsKg] = useState(true);
+  const [event, setEvent] = useState('CL'); // CL = Classic/Raw, EQ = Equipped
+  const [category, setCategory] = useState('PL'); // PL = Full Meet, BN = Bench Only
+  const [scores, setScores] = useState(null);
 
   const calculate1RM = () => {
     Keyboard.dismiss();
@@ -31,28 +61,54 @@ export default function CalculatorScreen() {
       return;
     }
 
-    // Якщо повторення = 1, то максимальна вага і є введеною
     if (k === 1) {
       setOneRepMax(m.toFixed(1));
       return;
     }
 
-    // 1. Формула Еплі (Epley)
     const epley = (m * k) / 30 + m;
-
-    // 2. Формула Метта Бжицькі (Matt Brzycki)
     const brzycki = m * (36 / (37 - k));
-
-    // 3. Формула Лендера (Lander)
     const lander = (100 * m) / (101.3 - 2.67123 * k);
-
-    // 4. Формула Про Коннор (O Conner)
     const oconner = m * (1 + 0.025 * k);
-
-    // Середнє значення 4 формул
     const average1RM = (epley + brzycki + lander + oconner) / 4;
 
     setOneRepMax(average1RM.toFixed(1));
+  };
+
+  const calculateScores = () => {
+    Keyboard.dismiss();
+    const bwVal = parseFloat(bw);
+    const wlVal = parseFloat(liftedWeight);
+
+    if (isNaN(bwVal) || isNaN(wlVal) || bwVal <= 0 || wlVal <= 0) {
+      setScores(null);
+      return;
+    }
+
+    // Convert to KG if LBS is selected
+    const weightCoeff = 0.45359237;
+    const bodyWeightKg = isKg ? bwVal : bwVal * weightCoeff;
+    const liftedWeightKg = isKg ? wlVal : wlVal * weightCoeff;
+
+    if (userEmail && bwVal !== records.bodyWeight) {
+      dispatch(updateRecord({ exercise: 'bodyWeight', value: bwVal }));
+      saveRecords(userEmail, records.bench, records.squat, records.deadlift, bwVal);
+    }
+
+    const compType = event + category; // e.g. "CLPL"
+
+    setScores({
+      dots: calculateDOTS(bodyWeightKg, liftedWeightKg, isFemale),
+      ipfGL: calculateIPFGL(bodyWeightKg, liftedWeightKg, isFemale, compType),
+      wilks2: calculateNewWilks(bodyWeightKg, liftedWeightKg, isFemale),
+      oldWilks: calculateOldWilks(bodyWeightKg, liftedWeightKg, isFemale),
+      ipf: calculateIPF(bodyWeightKg, liftedWeightKg, isFemale, compType),
+    });
+  };
+
+  const setRecordsAsLiftedWeight = () => {
+    const total = parseFloat(records.bench || 0) + parseFloat(records.squat || 0) + parseFloat(records.deadlift || 0);
+    setLiftedWeight(total.toString());
   };
 
   return (
@@ -61,84 +117,241 @@ export default function CalculatorScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
 
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>1RM Калькулятор</Text>
-            <Text style={styles.headerSubtitle}>Розрахунок разового максимуму</Text>
-          </View>
-
-          <View style={styles.recordsContainer}>
-            <Text style={styles.recordsTitle}>Мої Рекорди</Text>
-            <View style={styles.recordsRow}>
-              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/bench')}>
-                <Image source={require('../../app/exercise/benchpress.png')} style={styles.recordIcon} />
-                <Text style={styles.recordLabel}>Жим лежачи</Text>
-                <Text style={styles.recordValue}>{records.bench} кг</Text>
+            <Text style={styles.headerTitle}>Калькулятори</Text>
+            
+            <View style={styles.tabContainer}>
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === '1rm' && styles.tabButtonActive]}
+                onPress={() => setActiveTab('1rm')}
+              >
+                <Text style={[styles.tabText, activeTab === '1rm' && styles.tabTextActive]}>1RM Максимум</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/squat')}>
-                <Image source={require('../../app/exercise/squat.png')} style={styles.recordIcon} />
-                <Text style={styles.recordLabel}>Присяд зі штангою</Text>
-                <Text style={styles.recordValue}>{records.squat} кг</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/deadlift')}>
-                <Image source={require('../../app/exercise/deadlift.png')} style={styles.recordIcon} />
-                <Text style={styles.recordLabel}>Станова тяга</Text>
-                <Text style={styles.recordValue}>{records.deadlift} кг</Text>
+              <TouchableOpacity 
+                style={[styles.tabButton, activeTab === 'scores' && styles.tabButtonActive]}
+                onPress={() => setActiveTab('scores')}
+              >
+                <Text style={[styles.tabText, activeTab === 'scores' && styles.tabTextActive]}>Рейтинги (DOTS/GL)</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Вага штанги (кг):</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Наприклад: 80"
-                placeholderTextColor="#999"
-                value={weight}
-                onChangeText={setWeight}
-              />
-            </View>
+          {activeTab === '1rm' && (
+            <View>
+              <View style={styles.recordsContainer}>
+                <Text style={styles.recordsTitle}>Мої Рекорди</Text>
+                <View style={styles.recordsRow}>
+                  <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/bench')}>
+                    <Image source={require('../../app/exercise/benchpress.png')} style={styles.recordIcon} />
+                    <Text style={styles.recordLabel}>Жим лежачи</Text>
+                    <Text style={styles.recordValue}>{records.bench} кг</Text>
+                  </TouchableOpacity>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Кількість повторень:</Text>
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Наприклад: 8"
-                placeholderTextColor="#999"
-                value={reps}
-                onChangeText={setReps}
-              />
-            </View>
+                  <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/squat')}>
+                    <Image source={require('../../app/exercise/squat.png')} style={styles.recordIcon} />
+                    <Text style={styles.recordLabel}>Присяд</Text>
+                    <Text style={styles.recordValue}>{records.squat} кг</Text>
+                  </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.button, (!weight || !reps) && styles.buttonDisabled]}
-              onPress={calculate1RM}
-              disabled={!weight || !reps}
-            >
-              <Text style={styles.buttonText}>Розрахувати максимум</Text>
-            </TouchableOpacity>
-          </View>
+                  <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/deadlift')}>
+                    <Image source={require('../../app/exercise/deadlift.png')} style={styles.recordIcon} />
+                    <Text style={styles.recordLabel}>Станова тяга</Text>
+                    <Text style={styles.recordValue}>{records.deadlift} кг</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-          {oneRepMax !== null && (
-            <View style={styles.resultCard}>
-              <Text style={styles.resultTitle}>Ваш разовий максимум:</Text>
-              <Text style={styles.resultValue}>{oneRepMax} <Text style={styles.resultUnit}>кг</Text></Text>
+              <View style={styles.card}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Вага штанги (кг):</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="Наприклад: 80"
+                    placeholderTextColor="#999"
+                    value={weight}
+                    onChangeText={setWeight}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Кількість повторень:</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder="Наприклад: 8"
+                    placeholderTextColor="#999"
+                    value={reps}
+                    onChangeText={setReps}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.button, (!weight || !reps) && styles.buttonDisabled]}
+                  onPress={calculate1RM}
+                  disabled={!weight || !reps}
+                >
+                  <Text style={styles.buttonText}>Розрахувати максимум</Text>
+                </TouchableOpacity>
+              </View>
+
+              {oneRepMax !== null && (
+                <View style={styles.resultCard}>
+                  <Text style={styles.resultTitle}>Ваш разовий максимум:</Text>
+                  <Text style={styles.resultValue}>{oneRepMax} <Text style={styles.resultUnit}>кг</Text></Text>
+                </View>
+              )}
+
+              <View style={styles.infoBox}>
+                <Text style={styles.infoTitle}>Увага!</Text>
+                <Text style={styles.infoText}>
+                  Точне значення одноповторного максимуму залежить від багатьох індивідуальних особливостей організму кожної конкретної людини.
+                  Слід враховувати, що похибка даних формул може становити до <Text style={styles.boldText}>4%</Text>.
+                </Text>
+              </View>
             </View>
           )}
 
-          <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>Увага!</Text>
-            <Text style={styles.infoText}>
-              Точне значення одноповторного максимуму залежить від багатьох індивідуальних особливостей організму кожної конкретної людини.
-              Слід враховувати, що похибка даних формул може становити до <Text style={styles.boldText}>4%</Text>.
-            </Text>
-            <Text style={styles.infoTextSub}>
-              Розрахунок ведеться як середнє значення за 4 алгоритмами: Epley, Matt Brzycki, Lander та O'Conner.
-            </Text>
-          </View>
+          {activeTab === 'scores' && (
+            <View>
+              <View style={styles.card}>
+                
+                {/* Gender & Unit Toggles */}
+                <View style={styles.toggleRow}>
+                  <View style={styles.toggleGroup}>
+                    <Text style={styles.label}>Стать:</Text>
+                    <View style={styles.switchContainer}>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, !isFemale && styles.switchButtonActive]} 
+                        onPress={() => setIsFemale(false)}>
+                        <Text style={[styles.switchText, !isFemale && styles.switchTextActive]}>Чол.</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, isFemale && styles.switchButtonActive]} 
+                        onPress={() => setIsFemale(true)}>
+                        <Text style={[styles.switchText, isFemale && styles.switchTextActive]}>Жін.</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.toggleGroup}>
+                    <Text style={styles.label}>Одиниці:</Text>
+                    <View style={styles.switchContainer}>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, isKg && styles.switchButtonActive]} 
+                        onPress={() => setIsKg(true)}>
+                        <Text style={[styles.switchText, isKg && styles.switchTextActive]}>KG</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, !isKg && styles.switchButtonActive]} 
+                        onPress={() => setIsKg(false)}>
+                        <Text style={[styles.switchText, !isKg && styles.switchTextActive]}>LBS</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Власна вага:</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder={isKg ? "Наприклад: 80" : "Наприклад: 175"}
+                    placeholderTextColor="#999"
+                    value={bw}
+                    onChangeText={setBw}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Text style={styles.label}>Піднята вага:</Text>
+                    <TouchableOpacity onPress={setRecordsAsLiftedWeight}>
+                      <Text style={styles.linkText}>Використати мої рекорди</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    placeholder={isKg ? "Наприклад: 400" : "Наприклад: 880"}
+                    placeholderTextColor="#999"
+                    value={liftedWeight}
+                    onChangeText={setLiftedWeight}
+                  />
+                </View>
+
+                {/* Event & Category Toggles */}
+                <View style={styles.toggleRow}>
+                  <View style={styles.toggleGroup}>
+                    <Text style={styles.label}>Екіпірування:</Text>
+                    <View style={styles.switchContainer}>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, event === 'CL' && styles.switchButtonActive]} 
+                        onPress={() => setEvent('CL')}>
+                        <Text style={[styles.switchText, event === 'CL' && styles.switchTextActive]}>Raw</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, event === 'EQ' && styles.switchButtonActive]} 
+                        onPress={() => setEvent('EQ')}>
+                        <Text style={[styles.switchText, event === 'EQ' && styles.switchTextActive]}>Equip.</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View style={styles.toggleGroup}>
+                    <Text style={styles.label}>Тип змагань:</Text>
+                    <View style={styles.switchContainer}>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, category === 'PL' && styles.switchButtonActive]} 
+                        onPress={() => setCategory('PL')}>
+                        <Text style={[styles.switchText, category === 'PL' && styles.switchTextActive]}>Триборство</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.switchButton, category === 'BN' && styles.switchButtonActive]} 
+                        onPress={() => setCategory('BN')}>
+                        <Text style={[styles.switchText, category === 'BN' && styles.switchTextActive]}>Лише Жим</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.button, (!bw || !liftedWeight) && styles.buttonDisabled, {marginTop: 20}]}
+                  onPress={calculateScores}
+                  disabled={!bw || !liftedWeight}
+                >
+                  <Text style={styles.buttonText}>Розрахувати рейтинги</Text>
+                </TouchableOpacity>
+              </View>
+
+              {scores && (
+                <View style={styles.scoresGrid}>
+                  <View style={styles.scoreBoxMain}>
+                    <Text style={styles.scoreTitle}>DOTS</Text>
+                    <Text style={styles.scoreValueMain}>{scores.dots}</Text>
+                  </View>
+                  <View style={styles.scoreBoxMain}>
+                    <Text style={styles.scoreTitle}>IPF GL</Text>
+                    <Text style={styles.scoreValueMain}>{scores.ipfGL}</Text>
+                  </View>
+                  
+                  <View style={styles.scoreRow}>
+                    <View style={styles.scoreBoxSecondary}>
+                      <Text style={styles.scoreTitleSecondary}>Wilks (Новий)</Text>
+                      <Text style={styles.scoreValueSecondary}>{scores.wilks2}</Text>
+                    </View>
+                    <View style={styles.scoreBoxSecondary}>
+                      <Text style={styles.scoreTitleSecondary}>Wilks (Старий)</Text>
+                      <Text style={styles.scoreValueSecondary}>{scores.oldWilks}</Text>
+                    </View>
+                    <View style={styles.scoreBoxSecondary}>
+                      <Text style={styles.scoreTitleSecondary}>IPF Бали</Text>
+                      <Text style={styles.scoreValueSecondary}>{scores.ipf}</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </View>
+          )}
 
         </ScrollView>
       </TouchableWithoutFeedback>
@@ -157,18 +370,44 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 20,
     marginTop: 10,
   },
   headerTitle: {
     fontSize: 28,
     fontWeight: '800',
     color: '#1a1a2e',
-    marginBottom: 5,
+    marginBottom: 15,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#e9ecef',
+    borderRadius: 12,
+    padding: 4,
+    width: '100%',
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  tabButtonActive: {
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6c757d',
+  },
+  tabTextActive: {
+    color: '#1a1a2e',
+    fontWeight: '700',
   },
   recordsContainer: {
     marginBottom: 20,
@@ -210,7 +449,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   recordValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#1a1a2e',
   },
@@ -233,6 +472,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginBottom: 8,
+  },
+  linkText: {
+    fontSize: 13,
+    color: '#007bff',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
     backgroundColor: '#f8f9fa',
@@ -305,14 +550,100 @@ const styles = StyleSheet.create({
     color: '#856404',
     lineHeight: 20,
   },
-  infoTextSub: {
-    fontSize: 12,
-    color: '#856404',
-    lineHeight: 18,
-    marginTop: 10,
-    opacity: 0.8,
-  },
   boldText: {
     fontWeight: 'bold',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  toggleGroup: {
+    flex: 1,
+    marginRight: 10,
+  },
+  switchContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    overflow: 'hidden',
+  },
+  switchButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  switchButtonActive: {
+    backgroundColor: '#007bff',
+  },
+  switchText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6c757d',
+  },
+  switchTextActive: {
+    color: '#fff',
+  },
+  scoresGrid: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  scoreBoxMain: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#007bff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  scoreBoxSecondary: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  scoreTitle: {
+    fontSize: 14,
+    color: '#a0aab2',
+    marginBottom: 5,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  scoreValueMain: {
+    fontSize: 36,
+    fontWeight: '900',
+    color: '#fff',
+  },
+  scoreTitleSecondary: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 5,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  scoreValueSecondary: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1a1a2e',
   },
 });

@@ -90,14 +90,14 @@ export const updateUser = async (email, name, avatarUri) => {
   }
 };
 
-export const saveRecords = async (email, bench, squat, deadlift) => {
+export const saveRecords = async (email, bench, squat, deadlift, bodyWeight) => {
   try {
     const response = await fetch(`${API_URL}/records`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email, bench, squat, deadlift }),
+      body: JSON.stringify({ email, bench, squat, deadlift, bodyWeight }),
     });
     
     const data = await response.json();

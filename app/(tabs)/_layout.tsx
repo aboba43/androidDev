@@ -28,9 +28,12 @@ export default function TabLayout() {
           backgroundColor: '#fff',
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 10,
           textTransform: 'none',
-          marginTop: -2,
+          marginTop: 2,
+        },
+        tabBarItemStyle: {
+          paddingHorizontal: 0,
         },
         tabBarIconStyle: {
           width: 24,
@@ -58,6 +61,13 @@ export default function TabLayout() {
         options={{
           title: 'Профіль',
           tabBarIcon: ({ color }) => <FontAwesome name="user" size={24} color={color} />,
+        }}
+      />
+      <SwipeTabs.Screen
+        name="rankings"
+        options={{
+          title: 'Топ',
+          tabBarIcon: ({ color }) => <FontAwesome name="trophy" size={24} color={color} />,
         }}
       />
     </SwipeTabs>

@@ -9,6 +9,7 @@ const initialState = {
     bench: 0,
     squat: 0,
     deadlift: 0,
+    bodyWeight: 0,
   },
 };
 
@@ -30,7 +31,7 @@ export const userSlice = createSlice({
       state.email = '';
       state.avatarUri = null;
       state.isRegistered = false;
-      state.records = { bench: 0, squat: 0, deadlift: 0 };
+      state.records = { bench: 0, squat: 0, deadlift: 0, bodyWeight: 0 };
     },
     updateUserProfile: (state, action) => {
       state.name = action.payload.name;

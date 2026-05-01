@@ -54,7 +54,8 @@ export default function RegisterScreen() {
         records: {
           bench: user.bench || 0,
           squat: user.squat || 0,
-          deadlift: user.deadlift || 0
+          deadlift: user.deadlift || 0,
+          bodyWeight: user.bodyWeight || 0
         }
       }));
 
