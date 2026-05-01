@@ -148,7 +148,7 @@ export default function CalculatorScreen() {
 
                   <TouchableOpacity style={styles.recordCard} onPress={() => router.push('/exercise/squat')}>
                     <Image source={require('../../app/exercise/squat.png')} style={styles.recordIcon} />
-                    <Text style={styles.recordLabel}>Присяд</Text>
+                    <Text style={styles.recordLabel}>Присяд зі штангою</Text>
                     <Text style={styles.recordValue}>{records.squat} кг</Text>
                   </TouchableOpacity>
 
@@ -280,24 +280,24 @@ export default function CalculatorScreen() {
                 </View>
 
                 {/* Event & Category Toggles */}
-                <View style={styles.toggleRow}>
-                  <View style={styles.toggleGroup}>
+                <View style={{ marginBottom: 15 }}>
+                  <View style={{ marginBottom: 15 }}>
                     <Text style={styles.label}>Екіпірування:</Text>
                     <View style={styles.switchContainer}>
                       <TouchableOpacity 
                         style={[styles.switchButton, event === 'CL' && styles.switchButtonActive]} 
                         onPress={() => setEvent('CL')}>
-                        <Text style={[styles.switchText, event === 'CL' && styles.switchTextActive]}>Raw</Text>
+                        <Text style={[styles.switchText, event === 'CL' && styles.switchTextActive]}>Без екіпірування</Text>
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.switchButton, event === 'EQ' && styles.switchButtonActive]} 
                         onPress={() => setEvent('EQ')}>
-                        <Text style={[styles.switchText, event === 'EQ' && styles.switchTextActive]}>Equip.</Text>
+                        <Text style={[styles.switchText, event === 'EQ' && styles.switchTextActive]}>В екіпіруванні</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
 
-                  <View style={styles.toggleGroup}>
+                  <View>
                     <Text style={styles.label}>Тип змагань:</Text>
                     <View style={styles.switchContainer}>
                       <TouchableOpacity 

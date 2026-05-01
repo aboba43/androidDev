@@ -1,9 +1,9 @@
-import React from 'react';
-import { withLayoutContext } from 'expo-router';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { FontAwesome } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { withLayoutContext } from 'expo-router';
+import React from 'react';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const MaterialTopTabs = createMaterialTopTabNavigator().Navigator;
 const SwipeTabs = withLayoutContext(MaterialTopTabs);
@@ -23,17 +23,19 @@ export default function TabLayout() {
         },
         tabBarStyle: {
           paddingBottom: Platform.OS === 'ios' ? insets.bottom : 5,
-          paddingTop: 5,
+          paddingTop: 8,
           height: Platform.OS === 'ios' ? 55 + insets.bottom : 60,
-          backgroundColor: '#fff',
+          backgroundColor: '#ffffffff',
         },
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           textTransform: 'none',
-          marginTop: 2,
+          marginTop: 0,
+          marginBottom: 0,
         },
         tabBarItemStyle: {
           paddingHorizontal: 0,
+          paddingVertical: 0,
         },
         tabBarIconStyle: {
           width: 24,
