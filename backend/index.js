@@ -12,7 +12,6 @@ app.use(express.json());
 
 let db;
 
-// Initialize the database
 async function initDB() {
   db = await open({
     filename: './database.sqlite',
@@ -33,7 +32,6 @@ async function initDB() {
     );
   `);
   
-  // Try adding columns if table already existed without them
   try { await db.exec('ALTER TABLE users ADD COLUMN bench REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN squat REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN deadlift REAL DEFAULT 0'); } catch(e) {}
@@ -42,7 +40,6 @@ async function initDB() {
   console.log('Backend database initialized.');
 }
 
-// Endpoint: Register User
 app.post('/register', async (req, res) => {
   const { name, email, password, avatarUri } = req.body;
   
@@ -68,7 +65,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Endpoint: Login User
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   
@@ -85,7 +81,6 @@ app.post('/login', async (req, res) => {
     if (user) {
       const match = await bcrypt.compare(password, user.password);
       if (match) {
-        // Don't send the password back to the client
         const { password: _, ...safeUser } = user;
         res.status(200).json(safeUser);
       } else {
@@ -100,7 +95,6 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Endpoint: Update User Profile
 app.put('/user', async (req, res) => {
   const { email, name, avatarUri } = req.body;
   
@@ -125,7 +119,6 @@ app.put('/user', async (req, res) => {
   }
 });
 
-// Endpoint: Update User Records
 app.put('/records', async (req, res) => {
   const { email, bench, squat, deadlift, bodyWeight } = req.body;
   

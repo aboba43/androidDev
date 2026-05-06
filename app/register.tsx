@@ -10,6 +10,7 @@ export default function RegisterScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,16 +38,19 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Помилка', 'Будь ласка, заповніть всі обов\'язкові поля');
       return;
     }
 
-    // Зберігаємо в базу даних SQLite (тепер з паролем)
+    if (password !== confirmPassword) {
+      Alert.alert('Помилка', 'Паролі не співпадають');
+      return;
+    }
+
     const user = await saveUser(name, email, password, avatarUri);
 
     if (user) {
-      // Зберігаємо в Redux
       dispatch(registerUser({
         name: user.name,
         email: user.email,
@@ -59,7 +63,6 @@ export default function RegisterScreen() {
         }
       }));
 
-      // Перехід до головного меню (табів)
       router.replace('/shop');
     }
   };
@@ -119,6 +122,18 @@ export default function RegisterScreen() {
             placeholder="Введіть пароль"
             value={password}
             onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#888"
+          />
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Підтвердження паролю</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Введіть пароль ще раз"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
             secureTextEntry
             placeholderTextColor="#888"
           />

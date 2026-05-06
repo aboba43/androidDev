@@ -65,7 +65,6 @@ export default function ExerciseScreen() {
     if (!isNaN(val) && val >= 0) {
       dispatch(updateRecord({ exercise: id, value: val }));
       
-      // Save to backend database
       if (user.email) {
         const updatedRecords = { ...records, [id]: val };
         await saveRecords(
@@ -120,7 +119,7 @@ export default function ExerciseScreen() {
           </View>
 
           <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>💡 Рекомендації для техніки:</Text>
+            <Text style={styles.tipsTitle}> Рекомендації для техніки:</Text>
             {data.tips.map((tip, index) => (
               <View key={index} style={styles.tipItem}>
                 <Text style={styles.tipBullet}>•</Text>

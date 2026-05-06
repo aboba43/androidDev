@@ -30,12 +30,10 @@ export default function CalculatorScreen() {
   
   const [activeTab, setActiveTab] = useState('1rm'); // '1rm' or 'scores'
 
-  // 1RM States
   const [weight, setWeight] = useState('');
   const [reps, setReps] = useState('');
   const [oneRepMax, setOneRepMax] = useState(null);
 
-  // Scores States
   const [bw, setBw] = useState('');
   
   useEffect(() => {
@@ -85,7 +83,6 @@ export default function CalculatorScreen() {
       return;
     }
 
-    // Convert to KG if LBS is selected
     const weightCoeff = 0.45359237;
     const bodyWeightKg = isKg ? bwVal : bwVal * weightCoeff;
     const liftedWeightKg = isKg ? wlVal : wlVal * weightCoeff;
@@ -95,7 +92,7 @@ export default function CalculatorScreen() {
       saveRecords(userEmail, records.bench, records.squat, records.deadlift, bwVal);
     }
 
-    const compType = event + category; // e.g. "CLPL"
+    const compType = event + category; 
 
     setScores({
       dots: calculateDOTS(bodyWeightKg, liftedWeightKg, isFemale),

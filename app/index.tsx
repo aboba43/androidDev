@@ -20,7 +20,6 @@ export default function LoginScreen() {
     const user = await loginUser(email, password);
 
     if (user) {
-      // Зберігаємо в Redux
       dispatch(registerUser({
         name: user.name,
         email: user.email,
@@ -33,7 +32,6 @@ export default function LoginScreen() {
         }
       }));
 
-      // Перехід до головного меню (табів)
       router.replace('/shop');
     } else {
       Alert.alert('Помилка', 'Невірний email або пароль');

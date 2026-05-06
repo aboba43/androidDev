@@ -32,11 +32,9 @@ export default function EditProfileScreen() {
       return;
     }
 
-    // Зберігаємо зміни на сервері
     const result = await updateUser(user.email, name, avatarUri);
 
     if (result) {
-      // Оновлюємо Redux
       dispatch(updateUserProfile({
         name,
         avatarUri,

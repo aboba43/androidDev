@@ -73,10 +73,8 @@ export default function ChatScreen() {
           const responseText = await response.text();
           try {
             const data = JSON.parse(responseText);
-            // Підтримка різних полів, які може повертати n8n
             replyText = data.reply || data.output || data.text || data.message || responseText;
           } catch (e) {
-            // Якщо це не JSON, просто використовуємо текст
             replyText = responseText;
           }
         } catch (e) {
@@ -158,7 +156,7 @@ export default function ChatScreen() {
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}
-            placeholder="Напишіть повідомлення..."
+            placeholder="Напишіть повідомлення"
             placeholderTextColor="#888"
             value={inputText}
             onChangeText={setInputText}
