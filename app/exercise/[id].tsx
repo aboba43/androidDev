@@ -10,31 +10,34 @@ const exerciseData = {
   bench: {
     title: 'Жим лежачи',
     image: require('./benchpress.png'),
-    tips: [
-      'Тримайте лопатки зведеними разом і опущеними вниз протягом усього руху.',
-      'Використовуйте "міст" для зменшення амплітуди та захисту плечей, але сідниці мають торкатися лави.',
-      'Ступні повинні щільно впиратися в підлогу (leg drive) для передачі зусилля.',
-      'Опускайте штангу на низ грудей/сонячне сплетіння, лікті під кутом 45-60 градусів до тіла.',
+    auxiliaryExercises: [
+      { id: 'bench-narrow', name: 'Жим лежачи вузьким хватом' },
+      { id: 'bench-dumbbells', name: 'Жим гантелей лежачи на лаві' },
+      { id: 'dips', name: 'Віджимання на брусах' },
+      { id: 'seated-press', name: 'Жим сидячи' },
+      { id: 'triceps-extension', name: 'Розгинання на трицепс' },
+      { id: 'butterfly', name: 'Бабочка' },
     ]
   },
   squat: {
     title: 'Присяд зі штангою',
     image: require('./squat.png'),
-    tips: [
-      'Штанга повинна рухатися чітко над серединою стопи. Тримайте баланс.',
-      'Глибокий вдих перед початком руху і затримка дихання (маневр Вальсальви) для стабілізації кора.',
-      'Коліна повинні рухатися в напрямку носків, не зводьте їх всередину під час підйому.',
-      'Опускайтеся хоча б до паралелі стегна з підлогою для повного включення сідничних м\'язів.',
+    auxiliaryExercises: [
+      { id: 'box-squat', name: 'Присідання на тумбу' },
+      { id: 'leg-press', name: 'Жим ногами' },
+      { id: 'dumbbell-lunges', name: 'Випади з гантелями' },
+      { id: 'good-mornings', name: 'Нахили зі штангою' },
+      { id: 'cable-pull', name: 'Тяга блока' },
     ]
   },
   deadlift: {
     title: 'Станова тяга',
     image: require('./deadlift.png'),
-    tips: [
-      'Гриф має знаходитися над серединою стопи на старті і ковзати по гомілках під час підйому.',
-      'Спина має бути абсолютно рівною і жорстко зафіксованою. Жодних круглих попереків!',
-      'Рух починається з відштовхування ногами від підлоги ("жим ногами"), а не з витягування спиною.',
-      'Шия повинна бути в нейтральному положенні (не задирайте голову занадто високо).',
+    auxiliaryExercises: [
+      { id: 'romanian-deadlift', name: 'Румунська тяга (задня поверхня стегна/сідниці)' },
+      { id: 'deficit-deadlift', name: 'Тяга з ями (зрив)' },
+      { id: 'hyperextension', name: 'Гіперекстензія (розгиначі спини)' },
+      { id: 'bent-over-row', name: 'Тяга в нахилі (найширші)' },
     ]
   }
 };
@@ -119,12 +122,16 @@ export default function ExerciseScreen() {
           </View>
 
           <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}> Рекомендації для техніки:</Text>
-            {data.tips.map((tip, index) => (
-              <View key={index} style={styles.tipItem}>
-                <Text style={styles.tipBullet}>•</Text>
-                <Text style={styles.tipText}>{tip}</Text>
-              </View>
+            <Text style={styles.tipsTitle}>Вправи для покращення рекорду:</Text>
+            {data.auxiliaryExercises.map((exercise: any) => (
+              <TouchableOpacity 
+                key={exercise.id} 
+                style={styles.exerciseButton}
+                onPress={() => router.push(`/auxiliary/${exercise.id}`)}
+              >
+                <Text style={styles.exerciseButtonText}>{exercise.name}</Text>
+                <Ionicons name="chevron-forward" size={20} color="#007bff" />
+              </TouchableOpacity>
             ))}
           </View>
 
@@ -229,24 +236,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 10,
   },
-  tipItem: {
+  exerciseButton: {
     flexDirection: 'row',
-    marginBottom: 12,
-    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
-  tipBullet: {
-    fontSize: 18,
-    color: '#007bff',
-    marginRight: 10,
-    fontWeight: 'bold',
-    lineHeight: 24,
-  },
-  tipText: {
-    fontSize: 15,
-    color: '#444',
-    lineHeight: 22,
+  exerciseButtonText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
     flex: 1,
+    paddingRight: 10,
   },
 });
