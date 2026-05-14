@@ -213,6 +213,24 @@ app.get('/friends/:email', async (req, res) => {
   }
 });
 
+app.delete('/friends/:email/:friendId', async (req, res) => {
+  try {
+    const user = await db.get('SELECT id FROM users WHERE email = ?', [req.params.email]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const result = await db.run('DELETE FROM friends WHERE userId = ? AND friendId = ?', [user.id, req.params.friendId]);
+    
+    if (result.changes > 0) {
+      res.status(200).json({ message: 'Friend removed successfully' });
+    } else {
+      res.status(404).json({ error: 'Friend not found' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 initDB();
 
 app.listen(port, () => {

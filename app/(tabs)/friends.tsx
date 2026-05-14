@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, SafeAreaView, Alert, RefreshControl } from 'react-native';
 import { useSelector } from 'react-redux';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { addFriend, getFriends } from '../../utils/database';
+import { addFriend, getFriends, removeFriend } from '../../utils/database';
 import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 
@@ -65,6 +65,29 @@ export default function FriendsScreen() {
     }
   };
 
+  const handleDeleteFriend = (friendId: number, friendName: string) => {
+    Alert.alert(
+      'Видалити друга',
+      `Ви впевнені, що хочете видалити ${friendName} зі списку друзів?`,
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Видалити',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await removeFriend(user.email, friendId);
+            if (result.error) {
+              Alert.alert('Помилка', result.error);
+            } else {
+              Alert.alert('Успіх', 'Друга видалено');
+              loadFriends();
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderFriendCard = ({ item }: { item: any }) => (
     <View style={styles.friendCard}>
       <View style={styles.friendHeader}>
@@ -79,6 +102,9 @@ export default function FriendsScreen() {
           <Text style={styles.friendName}>{item.name}</Text>
           <Text style={styles.friendTag}>{item.userTag}</Text>
         </View>
+        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteFriend(item.id, item.name)}>
+          <Ionicons name="trash-outline" size={22} color="#ff4444" />
+        </TouchableOpacity>
       </View>
       
       <View style={styles.statsContainer}>
@@ -247,6 +273,9 @@ const styles = StyleSheet.create({
   },
   friendInfo: {
     flex: 1,
+  },
+  deleteButton: {
+    padding: 5,
   },
   friendName: {
     fontSize: 18,

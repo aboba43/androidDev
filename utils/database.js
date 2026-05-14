@@ -152,3 +152,22 @@ export const getFriends = async (email) => {
     return [];
   }
 };
+
+export const removeFriend = async (email, friendId) => {
+  try {
+    const response = await fetch(`${API_URL}/friends/${email}/${friendId}`, {
+      method: 'DELETE',
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to remove friend');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error removing friend on server:', error);
+    return { error: error.message };
+  }
+};
