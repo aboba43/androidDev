@@ -5,6 +5,7 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { addFriend, getFriends, removeFriend } from '../../utils/database';
 import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import Toast from 'react-native-toast-message';
 
 export default function FriendsScreen() {
   const user = useSelector((state: any) => state.user);
@@ -38,7 +39,12 @@ export default function FriendsScreen() {
   const copyToClipboard = async () => {
     if (user.userTag) {
       await Clipboard.setStringAsync(user.userTag);
-      Alert.alert('Скопійовано!', 'Ваш тег скопійовано в буфер обміну.');
+      Toast.show({
+        type: 'success',
+        text1: 'Скопійовано!',
+        text2: 'Ваш тег скопійовано в буфер обміну',
+        position: 'top',
+      });
     }
   };
 
@@ -57,9 +63,17 @@ export default function FriendsScreen() {
     const result = await addFriend(user.email, tagToSearch.toLowerCase());
     
     if (result.error) {
-      Alert.alert('Помилка', result.error);
+      Toast.show({
+        type: 'error',
+        text1: 'Помилка',
+        text2: result.error,
+      });
     } else {
-      Alert.alert('Успіх', 'Друга успішно додано!');
+      Toast.show({
+        type: 'success',
+        text1: 'Успіх',
+        text2: 'Друга успішно додано!',
+      });
       setFriendTag('');
       loadFriends();
     }
@@ -77,9 +91,17 @@ export default function FriendsScreen() {
           onPress: async () => {
             const result = await removeFriend(user.email, friendId);
             if (result.error) {
-              Alert.alert('Помилка', result.error);
+              Toast.show({
+                type: 'error',
+                text1: 'Помилка',
+                text2: result.error,
+              });
             } else {
-              Alert.alert('Успіх', 'Друга видалено');
+              Toast.show({
+                type: 'success',
+                text1: 'Успіх',
+                text2: 'Друга видалено',
+              });
               loadFriends();
             }
           },
