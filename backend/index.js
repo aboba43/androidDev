@@ -4,6 +4,10 @@ const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const bcrypt = require('bcrypt');
 
+function generateTag() {
+  return '#' + Math.random().toString(36).substring(2, 8).toLowerCase();
+}
+
 const app = express();
 const port = 3000;
 
@@ -28,7 +32,8 @@ async function initDB() {
       bench REAL DEFAULT 0,
       squat REAL DEFAULT 0,
       deadlift REAL DEFAULT 0,
-      bodyWeight REAL DEFAULT 0
+      bodyWeight REAL DEFAULT 0,
+      userTag TEXT UNIQUE
     );
   `);
   
@@ -36,6 +41,18 @@ async function initDB() {
   try { await db.exec('ALTER TABLE users ADD COLUMN squat REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN deadlift REAL DEFAULT 0'); } catch(e) {}
   try { await db.exec('ALTER TABLE users ADD COLUMN bodyWeight REAL DEFAULT 0'); } catch(e) {}
+  try { await db.exec('ALTER TABLE users ADD COLUMN userTag TEXT'); } catch(e) {
+    // If it fails, maybe we need to ignore or log. But SQLite doesn't allow UNIQUE here.
+  }
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS friends (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      userId INTEGER,
+      friendId INTEGER,
+      UNIQUE(userId, friendId)
+    );
+  `);
 
   console.log('Backend database initialized.');
 }
@@ -49,12 +66,13 @@ app.post('/register', async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userTag = generateTag();
     
     const result = await db.run(
-      'INSERT INTO users (name, email, password, avatarUri) VALUES (?, ?, ?, ?)',
-      [name, email, hashedPassword, avatarUri]
+      'INSERT INTO users (name, email, password, avatarUri, userTag) VALUES (?, ?, ?, ?, ?)',
+      [name, email, hashedPassword, avatarUri, userTag]
     );
-    res.status(201).json({ id: result.lastID, name, email, avatarUri, bench: 0, squat: 0, deadlift: 0, bodyWeight: 0 });
+    res.status(201).json({ id: result.lastID, name, email, avatarUri, bench: 0, squat: 0, deadlift: 0, bodyWeight: 0, userTag });
   } catch (error) {
     if (error.code === 'SQLITE_CONSTRAINT') {
       res.status(400).json({ error: 'Email already exists' });
@@ -81,7 +99,15 @@ app.post('/login', async (req, res) => {
     if (user) {
       const match = await bcrypt.compare(password, user.password);
       if (match) {
-        const { password: _, ...safeUser } = user;
+        let safeUser = { ...user };
+        delete safeUser.password;
+        
+        if (!safeUser.userTag) {
+          const newTag = generateTag();
+          await db.run('UPDATE users SET userTag = ? WHERE id = ?', [newTag, safeUser.id]);
+          safeUser.userTag = newTag;
+        }
+
         res.status(200).json(safeUser);
       } else {
         res.status(401).json({ error: 'Invalid credentials' });
@@ -132,6 +158,55 @@ app.put('/records', async (req, res) => {
       [bench || 0, squat || 0, deadlift || 0, bodyWeight || 0, email]
     );
     res.status(200).json({ message: 'Records updated successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/friends', async (req, res) => {
+  const { email, friendTag } = req.body;
+  
+  if (!email || !friendTag) {
+    return res.status(400).json({ error: 'Email and friendTag are required' });
+  }
+
+  try {
+    const user = await db.get('SELECT id FROM users WHERE email = ?', [email]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const friend = await db.get('SELECT id FROM users WHERE userTag = ?', [friendTag]);
+    if (!friend) return res.status(404).json({ error: 'Friend tag not found' });
+
+    if (user.id === friend.id) {
+      return res.status(400).json({ error: 'You cannot add yourself' });
+    }
+
+    await db.run('INSERT INTO friends (userId, friendId) VALUES (?, ?)', [user.id, friend.id]);
+    res.status(200).json({ message: 'Friend added successfully' });
+  } catch (error) {
+    if (error.code === 'SQLITE_CONSTRAINT') {
+      res.status(400).json({ error: 'Already friends' });
+    } else {
+      console.error(error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+app.get('/friends/:email', async (req, res) => {
+  try {
+    const user = await db.get('SELECT id FROM users WHERE email = ?', [req.params.email]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const friends = await db.all(`
+      SELECT u.id, u.name, u.userTag, u.avatarUri, u.bench, u.squat, u.deadlift, u.bodyWeight 
+      FROM users u
+      JOIN friends f ON u.id = f.friendId
+      WHERE f.userId = ?
+    `, [user.id]);
+
+    res.status(200).json(friends);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });

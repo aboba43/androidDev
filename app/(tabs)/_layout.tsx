@@ -59,6 +59,13 @@ export default function TabLayout() {
         }}
       />
       <SwipeTabs.Screen
+        name="friends"
+        options={{
+          title: 'Друзі',
+          tabBarIcon: ({ color }) => <FontAwesome name="users" size={24} color={color} />,
+        }}
+      />
+      <SwipeTabs.Screen
         name="profile"
         options={{
           title: 'Профіль',

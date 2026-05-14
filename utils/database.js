@@ -112,3 +112,43 @@ export const saveRecords = async (email, bench, squat, deadlift, bodyWeight) => 
     return null;
   }
 };
+
+export const addFriend = async (email, friendTag) => {
+  try {
+    const response = await fetch(`${API_URL}/friends`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, friendTag }),
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to add friend');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error adding friend on server:', error);
+    return { error: error.message };
+  }
+};
+
+export const getFriends = async (email) => {
+  try {
+    const response = await fetch(`${API_URL}/friends/${email}`);
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to fetch friends');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching friends on server:', error);
+    return [];
+  }
+};

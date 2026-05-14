@@ -23,6 +23,7 @@ export default function LoginScreen() {
       dispatch(registerUser({
         name: user.name,
         email: user.email,
+        userTag: user.userTag,
         avatarUri: user.avatarUri,
         records: {
           bench: user.bench || 0,

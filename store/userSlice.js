@@ -3,6 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   name: '',
   email: '',
+  userTag: null,
   avatarUri: null,
   isRegistered: false,
   records: {
@@ -20,6 +21,7 @@ export const userSlice = createSlice({
     registerUser: (state, action) => {
       state.name = action.payload.name;
       state.email = action.payload.email;
+      state.userTag = action.payload.userTag;
       state.avatarUri = action.payload.avatarUri;
       state.isRegistered = true;
       if (action.payload.records) {
@@ -29,6 +31,7 @@ export const userSlice = createSlice({
     logoutUser: (state) => {
       state.name = '';
       state.email = '';
+      state.userTag = null;
       state.avatarUri = null;
       state.isRegistered = false;
       state.records = { bench: 0, squat: 0, deadlift: 0, bodyWeight: 0 };

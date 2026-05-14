@@ -54,6 +54,7 @@ export default function RegisterScreen() {
       dispatch(registerUser({
         name: user.name,
         email: user.email,
+        userTag: user.userTag,
         avatarUri: user.avatarUri,
         records: {
           bench: user.bench || 0,

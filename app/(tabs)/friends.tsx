@@ -1,0 +1,292 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Image, SafeAreaView, Alert, RefreshControl } from 'react-native';
+import { useSelector } from 'react-redux';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { addFriend, getFriends } from '../../utils/database';
+import { useFocusEffect } from 'expo-router';
+
+export default function FriendsScreen() {
+  const user = useSelector((state: any) => state.user);
+  const [friendTag, setFriendTag] = useState('');
+  const [friendsList, setFriendsList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadFriends = async () => {
+    if (!user.email) return;
+    setLoading(true);
+    const data = await getFriends(user.email);
+    if (data && Array.isArray(data)) {
+      setFriendsList(data);
+    }
+    setLoading(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFriends();
+    }, [user.email])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadFriends();
+    setRefreshing(false);
+  };
+
+  const handleAddFriend = async () => {
+    if (!friendTag.trim()) {
+      Alert.alert('Помилка', 'Введіть тег друга');
+      return;
+    }
+    if (friendTag === user.userTag) {
+      Alert.alert('Помилка', 'Ви не можете додати самі себе');
+      return;
+    }
+
+    const tagToSearch = friendTag.startsWith('#') ? friendTag : `#${friendTag}`;
+
+    const result = await addFriend(user.email, tagToSearch.toLowerCase());
+    
+    if (result.error) {
+      Alert.alert('Помилка', result.error);
+    } else {
+      Alert.alert('Успіх', 'Друга успішно додано!');
+      setFriendTag('');
+      loadFriends();
+    }
+  };
+
+  const renderFriendCard = ({ item }: { item: any }) => (
+    <View style={styles.friendCard}>
+      <View style={styles.friendHeader}>
+        {item.avatarUri ? (
+          <Image source={{ uri: item.avatarUri }} style={styles.friendAvatar} />
+        ) : (
+          <View style={[styles.friendAvatar, styles.placeholderAvatar]}>
+            <FontAwesome name="user" size={24} color="#888" />
+          </View>
+        )}
+        <View style={styles.friendInfo}>
+          <Text style={styles.friendName}>{item.name}</Text>
+          <Text style={styles.friendTag}>{item.userTag}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.statsContainer}>
+        <View style={styles.statBox}>
+          <Text style={styles.statLabel}>Жим</Text>
+          <Text style={styles.statValue}>{item.bench || 0} кг</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statLabel}>Присяд</Text>
+          <Text style={styles.statValue}>{item.squat || 0} кг</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statLabel}>Станова</Text>
+          <Text style={styles.statValue}>{item.deadlift || 0} кг</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.myTagContainer}>
+          <Text style={styles.myTagLabel}>Ваш тег для друзів:</Text>
+          <View style={styles.tagBox}>
+            <Text style={styles.myTagValue}>{user.userTag || 'Немає тегу'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.addFriendContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Введіть тег (наприклад #qw345r)"
+            value={friendTag}
+            onChangeText={setFriendTag}
+            autoCapitalize="none"
+            placeholderTextColor="#888"
+          />
+          <TouchableOpacity style={styles.addButton} onPress={handleAddFriend}>
+            <Ionicons name="person-add" size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.listTitle}>Ваші друзі ({friendsList.length})</Text>
+
+        <FlatList
+          data={friendsList}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderFriendCard}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#007bff']} />
+          }
+          ListEmptyComponent={
+            !loading ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="people-outline" size={60} color="#ccc" />
+                <Text style={styles.emptyText}>У вас поки немає друзів.</Text>
+                <Text style={styles.emptySubtext}>Додайте когось за тегом, щоб бачити їх результати!</Text>
+              </View>
+            ) : null
+          }
+        />
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f7fa',
+  },
+  container: {
+    flex: 1,
+    padding: 15,
+  },
+  myTagContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  myTagLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  tagBox: {
+    backgroundColor: '#e6f2ff',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  myTagValue: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#007bff',
+    letterSpacing: 1,
+  },
+  addFriendContainer: {
+    flexDirection: 'row',
+    marginBottom: 25,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginRight: 10,
+    color: '#333',
+  },
+  addButton: {
+    backgroundColor: '#007bff',
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  friendCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  friendHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  friendAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  placeholderAvatar: {
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  friendInfo: {
+    flex: 1,
+  },
+  friendName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  friendTag: {
+    fontSize: 14,
+    color: '#888',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 12,
+  },
+  statBox: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 15,
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+});
