@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 
 const auxiliaryData = {
   'bench-narrow': { title: 'Жим лежачи вузьким хватом' },
@@ -61,6 +61,14 @@ export default function AuxiliaryExerciseScreen() {
             Тут буде детальний опис техніки виконання вправи "{data.title}". Цей текст тимчасовий та буде замінений у майбутньому.
           </Text>
         </View>
+
+        <TouchableOpacity style={styles.youtubeButton} onPress={() => {
+          const query = encodeURIComponent(data.title);
+          Linking.openURL(`https://www.youtube.com/results?search_query=${query}`);
+        }}>
+          <Ionicons name="logo-youtube" size={24} color="#fff" />
+          <Text style={styles.youtubeButtonText}>Шукати на YouTube</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -132,5 +140,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#666',
     lineHeight: 24,
+  },
+  youtubeButton: {
+    backgroundColor: '#ff0000',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 15,
+    borderRadius: 12,
+    marginTop: 20,
+    shadowColor: '#ff0000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  youtubeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
