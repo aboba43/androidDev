@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { registerUser } from '../store/userSlice'; // Reusing this action to set current user
 import { router } from 'expo-router';
@@ -39,35 +39,54 @@ export default function LoginScreen() {
     }
   };
 
+  const handleEmailChange = (text: string) => {
+    if (text.length - email.length > 1) {
+      Keyboard.dismiss();
+    }
+    setEmail(text);
+  };
+
+  const handlePasswordChange = (text: string) => {
+    if (text.length - password.length > 1) {
+      Keyboard.dismiss();
+    }
+    setPassword(text);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Вхід в акаунт</Text>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Вхід в акаунт</Text>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Введіть ваш email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#888"
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Введіть ваш email"
+              value={email}
+              onChangeText={handleEmailChange}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor="#888"
+              textContentType="emailAddress"
+              autoComplete="email"
+            />
+          </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>Пароль</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Введіть пароль"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor="#888"
-          />
-        </View>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Пароль</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Введіть пароль"
+              value={password}
+              onChangeText={handlePasswordChange}
+              secureTextEntry
+              placeholderTextColor="#888"
+              textContentType="password"
+              autoComplete="password"
+            />
+          </View>
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Увійти</Text>
@@ -76,7 +95,8 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.linkButton} onPress={() => router.push('/register')}>
           <Text style={styles.linkText}>Немає акаунту? Зареєструватися</Text>
         </TouchableOpacity>
-      </View>
+        </View>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 }

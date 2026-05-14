@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ScrollView, Alert, SafeAreaView, ActivityIndicator, Keyboard } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useDispatch } from 'react-redux';
 import { registerUser } from '../store/userSlice';
@@ -35,6 +35,26 @@ export default function RegisterScreen() {
     if (!result.canceled) {
       setAvatarUri(result.assets[0].uri);
     }
+  };
+
+  const handleNameChange = (text: string) => {
+    if (text.length - name.length > 1) Keyboard.dismiss();
+    setName(text);
+  };
+
+  const handleEmailChange = (text: string) => {
+    if (text.length - email.length > 1) Keyboard.dismiss();
+    setEmail(text);
+  };
+
+  const handlePasswordChange = (text: string) => {
+    if (text.length - password.length > 1) Keyboard.dismiss();
+    setPassword(text);
+  };
+
+  const handleConfirmPasswordChange = (text: string) => {
+    if (text.length - confirmPassword.length > 1) Keyboard.dismiss();
+    setConfirmPassword(text);
   };
 
   const handleRegister = async () => {
@@ -98,8 +118,10 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Введіть ваше ім'я"
             value={name}
-            onChangeText={setName}
+            onChangeText={handleNameChange}
             placeholderTextColor="#888"
+            textContentType="name"
+            autoComplete="name"
           />
         </View>
 
@@ -109,10 +131,12 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Введіть ваш email"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#888"
+            textContentType="emailAddress"
+            autoComplete="email"
           />
         </View>
 
@@ -122,9 +146,11 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Введіть пароль"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             secureTextEntry
             placeholderTextColor="#888"
+            textContentType="newPassword"
+            autoComplete="password-new"
           />
         </View>
 
@@ -134,9 +160,11 @@ export default function RegisterScreen() {
             style={styles.input}
             placeholder="Введіть пароль ще раз"
             value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            onChangeText={handleConfirmPasswordChange}
             secureTextEntry
             placeholderTextColor="#888"
+            textContentType="newPassword"
+            autoComplete="password-new"
           />
         </View>
 
