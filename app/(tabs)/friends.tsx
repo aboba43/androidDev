@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { addFriend, getFriends } from '../../utils/database';
 import { useFocusEffect } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 
 export default function FriendsScreen() {
   const user = useSelector((state: any) => state.user);
@@ -32,6 +33,13 @@ export default function FriendsScreen() {
     setRefreshing(true);
     await loadFriends();
     setRefreshing(false);
+  };
+
+  const copyToClipboard = async () => {
+    if (user.userTag) {
+      await Clipboard.setStringAsync(user.userTag);
+      Alert.alert('Скопійовано!', 'Ваш тег скопійовано в буфер обміну.');
+    }
   };
 
   const handleAddFriend = async () => {
@@ -94,10 +102,10 @@ export default function FriendsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.myTagContainer}>
-          <Text style={styles.myTagLabel}>Ваш тег для друзів:</Text>
-          <View style={styles.tagBox}>
+          <Text style={styles.myTagLabel}>Ваш тег для друзів (натисніть, щоб скопіювати):</Text>
+          <TouchableOpacity style={styles.tagBox} onPress={copyToClipboard}>
             <Text style={styles.myTagValue}>{user.userTag || 'Немає тегу'}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.addFriendContainer}>
